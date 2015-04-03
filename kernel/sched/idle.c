@@ -148,8 +148,7 @@ static void cpuidle_idle_call(void)
 	 * is used from another cpu as a broadcast timer, this call may
 	 * fail if it is not available
 	 */
-	if (broadcast &&
-	    clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_ENTER, &dev->cpu))
+	if (broadcast && tick_broadcast_enter())
 		goto use_default;
 
 	/* Take note of the planned idle state. */
@@ -166,7 +165,7 @@ static void cpuidle_idle_call(void)
 	idle_set_state(this_rq(), NULL);
 
 	if (broadcast)
-		clockevents_notify(CLOCK_EVT_NOTIFY_BROADCAST_EXIT, &dev->cpu);
+		tick_broadcast_exit();
 
 	/*
 	 * Give the governor an opportunity to reflect on the outcome
