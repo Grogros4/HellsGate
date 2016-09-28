@@ -386,12 +386,15 @@
 		qcom,master-id = <86>;
 		qcom,clk-freq-out = <400000>;
 		qcom,clk-freq-in  = <19200000>;
+		qcom,i2c-clk = <&tlmm 48 0>;
+		qcom,i2c-dat = <&tlmm 47 0>;
 		clock-names = "iface_clk", "core_clk";
 		clocks = <&clock_gcc clk_gcc_blsp1_ahb_clk>,
 			 <&clock_gcc clk_gcc_blsp1_qup3_i2c_apps_clk>;
-		pinctrl-names = "i2c_active", "i2c_sleep";
+		pinctrl-names = "i2c_active", "i2c_sleep", "i2c_bitbang";
 		pinctrl-0 = <&i2c_3_active>;
 		pinctrl-1 = <&i2c_3_sleep>;
+		pinctrl-2 = <&i2c_3_bitbang>;
 		ak4490@10 {
                         compatible = "ak4490";
                         reg = <0x10>;

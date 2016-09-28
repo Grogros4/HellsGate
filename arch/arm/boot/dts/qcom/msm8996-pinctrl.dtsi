@@ -996,6 +996,19 @@
 					bias-pull-up;
 				};
 			};
+
+			i2c_3_bitbang: i2c_3_bitbang {
+				mux {
+					pins = "gpio47", "gpio48";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio47", "gpio48";
+					drive-strength = <8>;
+					bias-disable;
+				};
+			};
 		};
 
 		i2c_11 {
