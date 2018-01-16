@@ -22,8 +22,10 @@
 #include <linux/workqueue.h>
 #include <linux/kthread.h>
 #include <linux/slab.h>
-#include <linux/display_state.h>
 #include <asm/cputime.h>
+#ifdef CONFIG_STATE_NOTIFIER
+#include <linux/state_notifier.h>
+#endif
 
 struct cpufreq_nightmare_policyinfo {
 	struct timer_list policy_timer;
@@ -83,7 +85,9 @@ struct cpufreq_nightmare_tunables {
 	 * The sample rate of the timer used to increase frequency
 	 */
 	unsigned long timer_rate;
+#ifdef CONFIG_STATE_NOTIFIER
 	unsigned long timer_rate_prev;
+#endif
 	/*
 	 * Max additional time to wait in idle, beyond timer_rate, at speeds
 	 * above minimum before wakeup to reduce speed, or -1 if unnecessary.
@@ -340,17 +344,18 @@ static void cpufreq_nightmare_timer(unsigned long data)
 	spin_lock_irqsave(&ppol->load_lock, flags);
 	ppol->last_evaluated_jiffy = get_jiffies_64();
 
-	if (is_display_on() &&
+#ifdef CONFIG_STATE_NOTIFIER
+	if (!state_suspended &&
 		tunables->timer_rate != tunables->timer_rate_prev)
 		tunables->timer_rate = tunables->timer_rate_prev;
-	else if (!is_display_on() &&
+	else if (state_suspended &&
 		tunables->timer_rate != DEFAULT_TIMER_RATE_SUSP) {
 		tunables->timer_rate_prev = tunables->timer_rate;
 		tunables->timer_rate
 			= max(tunables->timer_rate,
 				DEFAULT_TIMER_RATE_SUSP);
 	}
-
+#endif
 	/* CPUs Online Scale Frequency*/
 	if (ppol->policy->cur < freq_for_responsiveness) {
 		freq_step = tunables->freq_step_at_min_freq;
@@ -579,7 +584,9 @@ static ssize_t store_timer_rate(struct cpufreq_nightmare_tunables *tunables,
 		pr_warn("timer_rate not aligned to jiffy. Rounded up to %lu\n",
 			val_round);
 	tunables->timer_rate = val_round;
+#ifdef CONFIG_STATE_NOTIFIER
 	tunables->timer_rate_prev = val_round;
+#endif
 
 	return count;
 }
@@ -1007,7 +1014,9 @@ static struct cpufreq_nightmare_tunables *alloc_tunable(
 		return ERR_PTR(-ENOMEM);
 
 	tunables->timer_rate = DEFAULT_TIMER_RATE;
+#ifdef CONFIG_STATE_NOTIFIER
 	tunables->timer_rate_prev = DEFAULT_TIMER_RATE;
+#endif
 	tunables->timer_slack_val = DEFAULT_TIMER_SLACK;
 	tunables->freq_for_responsiveness = FREQ_RESPONSIVENESS;
 	tunables->freq_for_responsiveness_max = FREQ_RESPONSIVENESS_MAX;
