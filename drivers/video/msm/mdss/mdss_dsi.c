@@ -46,6 +46,10 @@ static struct mdss_dsi_data *mdss_dsi_res;
 
 static struct pm_qos_request mdss_dsi_pm_qos_request;
 
+#ifdef CONFIG_STATE_NOTIFIER
+#include <linux/state_notifier.h>
+#endif
+
 static void mdss_dsi_pm_qos_add_request(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
 	struct irq_info *irq_info;
@@ -2678,7 +2682,7 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		if (!use_fb_notifier)
 			state_resume();
 #endif
-		lcd_notifier_call_chain(LCD_EVENT_ON_END, NULL);
+
 		break;
 	case MDSS_EVENT_BLANK:
 		lcd_notifier_call_chain(LCD_EVENT_OFF_START, NULL);
@@ -2698,7 +2702,7 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 		if (!use_fb_notifier)
 			state_suspend();
 #endif
-		lcd_notifier_call_chain(LCD_EVENT_OFF_END, NULL);
+
 		break;
 	case MDSS_EVENT_CONT_SPLASH_FINISH:
 		if (ctrl_pdata->off_cmds.link_state == DSI_LP_MODE)
