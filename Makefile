@@ -301,9 +301,12 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 # HolyDragon Optimization Flags #
 
+GRAPHITE = -fgraphite -fgraphite-identity -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -ftree-loop-linear
 
 # Extra GCC Optimizations	  
-EXTRA_OPTS := -fira-hoist-pressure -fira-loop-pressure \
+EXTRA_OPTS := \
+	-falign-loops=1 -falign-functions=1 -falign-labels=1 -falign-jumps=1 \
+	-fira-hoist-pressure -fira-loop-pressure \
 	-fsched-pressure -fsched-spec-load -ftree-vectorize \
 	-fno-guess-branch-probability -fpredictive-commoning \
 	-fvect-cost-model=cheap -fsimd-cost-model=cheap \
@@ -312,12 +315,14 @@ EXTRA_OPTS := -fira-hoist-pressure -fira-loop-pressure \
 # Arm Architecture Specific
 # fall back to -march=armv8-a in case the compiler isn't compatible
 # with -mcpu and -mtune
-ARM_ARCH_OPT := $(call cc-option,-march=armv8.1-a+crc+lse+crypto+fp+simd,) \
-	-mcpu=cortex-a57+crc+crypto+fp+simd --param l1-cache-line-size=64 --param l1-cache-size=32 --param l2-cache-size=512
+ARM_ARCH_OPT := \
+	$(call cc-option,-march=armv8-a+crc+crypto+fp+simd,) \
+	-mtune=cortex-a57 -mcpu=cortex-a57+crc+crypto+fp+simd \
+	--param l1-cache-line-size=64 --param l1-cache-size=32 --param l2-cache-size=512 
 
 # Optional
 GEN_OPT_FLAGS := \
- -DNDEBUG -pipe \
+ -DNDEBUG -g0 -pipe \
  -fomit-frame-pointer 
 
 LTO_FLAGS := -flto -mllvm -fuse-ld=qcld
@@ -343,8 +348,6 @@ CPP_TRIPLE = $(HDK_TC)clang++
 
 CLANG_IA_FLAG += -no-integrated-as
 CLANG_FLAGS := $(CLANG_TRIPLE) $(CLANG_IA_FLAG) $(OPT_FLAGS)
-
-GRAPHITE = -fgraphite -fgraphite-identity -floop-interchange -ftree-loop-distribution -floop-strip-mine -floop-block -ftree-loop-linear
 
 HOSTCC       = gcc
 HOSTCXX      = g++
@@ -406,12 +409,12 @@ include $(srctree)/scripts/Kbuild.include
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld.bfd -fuse-ld=qcld --strip-debug
 CC		= $(CROSS_COMPILE)gcc -g0
-CPP		= $(CC) -E
+CPP		= $(CC) -E -flto -fuse-linker-plugin
 AR		= $(LLVM_TRIPLE)ar
 NM		= $(LLVM_TRIPLE)nm
 STRIP		= $(LLVM_TRIPLE)strip
 OBJCOPY		= $(CROSS_COMPILE)objcopy
-OBJDUMP		= $(CROSS_COMPILE)objdump
+OBJDUMP		= $(LLVM_TRIPLE)objdump $(ARM_ARCH_OPT)
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
